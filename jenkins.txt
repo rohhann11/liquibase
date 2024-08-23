@@ -5,8 +5,8 @@ pipeline {
     }
 
     environment {
-        LIQUIBASE_HOME = '/path/to/liquibase' // Path to Liquibase installation on the Jenkins agent
-        DB_URL = 'jdbc:postgresql://node1-db-host:5432/yourdb' // URL to the target database
+        LIQUIBASE_HOME = '/home/ubuntu/liqui' // Path to Liquibase installation on the Jenkins agent
+        DB_URL = 'jdbc:mysql://node1-db-host:3306/db' // URL to the target database
         DB_USER = 'your_db_user' // Database user
         DB_PASSWORD = 'your_db_password' // Database password
         LIQUIBASE_FOLDER = 'files' // Folder in Git repository containing Liquibase files
