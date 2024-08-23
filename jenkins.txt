@@ -1,0 +1,67 @@
+pipeline {
+    agent {
+        // Define the Jenkins agent where Liquibase will be executed
+        label 'node'
+    }
+
+    environment {
+        LIQUIBASE_HOME = '/path/to/liquibase' // Path to Liquibase installation on the Jenkins agent
+        DB_URL = 'jdbc:postgresql://node1-db-host:5432/yourdb' // URL to the target database
+        DB_USER = 'your_db_user' // Database user
+        DB_PASSWORD = 'your_db_password' // Database password
+        LIQUIBASE_FOLDER = 'files' // Folder in Git repository containing Liquibase files
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout the latest version of the repository
+                git url: 'https://github.com/your-repo/liquibase-scripts.git', branch: 'main'
+            }
+        }
+
+        stage('Find Latest Liquibase File') {
+            steps {
+                script {
+                    // Find the latest Liquibase file in the specified folder
+                    def changelogFile = sh(script: """
+                        find ${LIQUIBASE_FOLDER} -name '*.xml' -print0 | xargs -0 ls -t | head -n 1
+                    """, returnStdout: true).trim()
+                    
+                    if (changelogFile) {
+                        echo "Found Liquibase changelog file: ${changelogFile}"
+                    } else {
+                        error "No Liquibase changelog file found in ${LIQUIBASE_FOLDER}."
+                    }
+                    
+                    // Set the changelog file path for later use
+                    env.CHANGELOG_FILE = changelogFile
+                }
+            }
+        }
+
+        stage('Run Liquibase') {
+            steps {
+                script {
+                    // Execute Liquibase update command
+                    sh """
+                    ${LIQUIBASE_HOME}/liquibase --changeLogFile=${CHANGELOG_FILE} \
+                        --url=${DB_URL} \
+                        --username=${DB_USER} \
+                        --password=${DB_PASSWORD} \
+                        update
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Liquibase update was successful.'
+        }
+        failure {
+            echo 'Liquibase update failed.'
+        }
+    }
+}
